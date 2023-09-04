@@ -6,7 +6,7 @@ class Ats_functions:
 
 #this func returns the value true or false 
     def resume_length(self,resume):
-        thresholdl_limit = 670  
+        threshold_limit = 670  
 #This needs to be updated with the correct data
         with open(resume, "r") as json_file:
             data = json.load(json_file)
@@ -15,7 +15,7 @@ class Ats_functions:
 #droppin all the special characters and whitespces
             for x in " !\"#$%&'()*+,-./:;<=>?@[\]^_`{|}~":
                 char = char.replace(x,"")
-        if len(char)>670:
+        if len(char)>threshold_limit:
             return False
         else:
             return True
