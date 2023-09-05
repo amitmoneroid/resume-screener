@@ -14,6 +14,9 @@ class Ats_Functions:
         threshold = 5
         if count >= threshold:
             print("Resume rejected due to overuse of personal pronouns")
+            return False
         else:
             print("Resume accepted!")
+            return True
+        
 
