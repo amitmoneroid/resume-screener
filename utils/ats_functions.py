@@ -1,6 +1,6 @@
 import json 
 import re 
-from nltk.tokenize import word_tokenize
+from nltk.tokenize import RegexpTokenizer
 
 class Ats_Functions:
     def __init__(self,path):
