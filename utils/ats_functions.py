@@ -23,41 +23,43 @@ class Ats_Functions:
             
             
             
-    def Check_bullet_count(text):
+    def Count_bullet(text):
     # tokenizer matches all the '•' or '-'
-    tokenizer = RegexpTokenizer( r'[*•\-]\s+')
+        tokenizer = RegexpTokenizer( r'[*•\-]\s+')
     #lst stores * and • and -
-    lst=tokenizer.tokenize(text)
-    return len(lst)
+        lst=tokenizer.tokenize(text)
+        return len(lst)
         
-        #Checks for: If the user has used appropriate no. of bullet points. And returns an COMMENT about it
+        #Checks for: If the user has used appropriate no. of bullet points
     def Check_bullet_point(self):
-        ct=self.Check_bullet_count()
-        if ct < 3:                                      #Lower limit for bullet point                                      
-            print ("Utilize More Bullet Points")
-        elif ct > 8:                                    #Higher limit for bullet point
-            print("Too many Bullet Points used")
-        else:
-            print("Good Bullet Point Utilization")
+        ct=self.Count_bullet()
+        if   ct > 3 and ct < 8:                              #checks if it is within the Resume limit suggestion                                              
+            return True
+        else :                                    
+            return False
               
         
-    def IsParagraph(self):
+    def Count_Paragraph(self):
+        no_of_paragraph=0                                                         #   checks for no. of paragraph                        
+        remove_bullet=text.split('•')                                             #                                       
+        data_without_bullet = ''.join(remove_bullet)                              #   removes bullet and stores the data in data_without_bullet
+        remove_hyphen_bullet=data_without_bullet.split('-')                       #          
+        data_without_bullet_hyphen=''.join(remove_hyphen_bullet)                  #   removes hyohen and stores the data in data_without_bullet_hyphen          
+        pattern = r' {2,}|\n'                                                     #           
+        isolated_paragraaph=re.split(pattern, data_without_bullet_hyphen)         #   This splits the rest of the data with : If it is a new line or multiple spaces then split            
+                                                                                  #   It lets u store multiple paragraph and lets u check more than one paragraph from a single string                     
+        for pararaph in isolated_paragraaph:                                      #                           
+            # regular expression                                                  #               
+            paragraph_pattern = r'[^.!?]*[.!?]'                                   #   This pattern splits the string into substring without removing the punctuation marks[unlike sentence tokenization]                                 
+            sentences = re.findall(paragraph_pattern, pararaph)                   #                                                   
+            # Check if there are multiple sentences                                                             
+            if len(sentences) > 1:                                                                                                      
+                no_of_paragraph=no_of_paragraph+1
+        return no_of_paragraph
         
-        if isinstance(self.data, str):
-            # This regular expression pattern starts checking/counting the sentence after the first character of [.!?]
-            sentence_pattern = r'[^.!?]*[.!?]'
-            
-            # Split the data into sentences using the sentence_pattern. 
-            sentences = re.findall(sentence_pattern, self.data)
-            
-            # Check for paragraph: If multiple sentence then It is  paragraph
-            if len(sentences) > 1:
-                return True
-            else:
-                return False
     
-    def Resume_status(self):
-        if IsParagraph():
-            print("RESUME IS NOT ACCEPTIBLE")
+    def IsParagraph(self):
+        if self.Count_Paragraph > 0 :
+            return True
         else:
-            print("RESUME IS ACCEPTIBLE")
+            return False
