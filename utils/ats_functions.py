@@ -23,18 +23,12 @@ class Ats_Functions:
             
             
             
-    def Check_bullet_count(self):
-        #splits the long string into tokens by tokenization with optional
-        # NOTe:  • [alt + 0149]
-        tokens= word_tokenize(self.path)
-        count = 0
-
-    # regex can be utilized to reduce time complexity
-        for token in tokens:
-            if token == '•':
-                count += 1
-
-        return count
+    def Check_bullet_count(text):
+    # tokenizer matches all the '•' or '-'
+    tokenizer = RegexpTokenizer( r'[*•\-]\s+')
+    #lst stores * and • and -
+    lst=tokenizer.tokenize(text)
+    return len(lst)
         
         #Checks for: If the user has used appropriate no. of bullet points. And returns an COMMENT about it
     def Check_bullet_point(self):
