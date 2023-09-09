@@ -7,7 +7,7 @@ class Ats_functions:
 #this func returns the value true or false 
     def resume_length(self,resume):
         threshold_limit = 670  
-#This needs to be updated with the correct data
+#This needs to be updated with the data
         with open(resume, "r") as json_file:
             data = json.load(json_file)
             extracted_data = [value for section in data.values() if isinstance(section, list) for dictionary in section for value in dictionary.values()]
@@ -22,7 +22,7 @@ class Ats_functions:
 
 if __name__ == "__main__":
     smthn = Ats_functions()
-    resume = 'temp.json'
-    value = smthn.resume_length(resume)
+    resume = 'temp.json'        #this has the resume json file directory 
+    value = smthn.resume_length(resume)     #'value' has the result 
 # 'resume' consists of the input json file 
 
