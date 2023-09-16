@@ -9,7 +9,7 @@ class Ats_Functions:
         #assigns data from the path by loading load_data
         self.load_data()
         
-        
+        #Hi I am currently in a meeting
     def load_data(self):
         try: 
             #loads data into the  json.data from the Json file 
