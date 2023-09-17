@@ -1,7 +1,7 @@
 import json 
 import re 
 from nltk.tokenize import RegexpTokenizer
-# I am stilll here right???
+
 class Ats_Functions:
     def __init__(self,path):
         self.path=path
@@ -57,7 +57,7 @@ class Ats_Functions:
                 no_of_paragraph=no_of_paragraph+1
         return no_of_paragraph
         
-    
+    # checks for paragraph
     def IsParagraph(self):
         if self.Count_Paragraph > 0 :
             return True
