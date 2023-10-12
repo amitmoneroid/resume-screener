@@ -26,4 +26,5 @@ class Ats_Functions:
         else:
             print("Resume accepted!")
             return True
+        
 
