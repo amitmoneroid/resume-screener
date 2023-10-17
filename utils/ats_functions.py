@@ -6,7 +6,7 @@ class Ats_Functions:
         self.file = file
 
     def check_images(self):
-        pdf = fitz.open(file)
+        pdf = fitz.open(self.file)
         page = pdf[0]
         images = page.get_images()
 
