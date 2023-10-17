@@ -6,13 +6,14 @@ class Ats_Functions:
         self.file = file
 
     def check_images(self):
+        """
+        Returns: boolean value, int value(count of images)
+        """
         pdf = fitz.open(self.file)
         page = pdf[0]
         images = page.get_images()
 
         if images:
-            print(f"Found {len(images)} images")
-            print("Resume not acceptable")
+            return True, images 
         else:
-            print("No images found")
-            print("Resume acceptable")
+            return False, 0
