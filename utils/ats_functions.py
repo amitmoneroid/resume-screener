@@ -1,5 +1,6 @@
 import json
 import fitz
+from PIL import Image
 
 
 class Ats_Functions:
