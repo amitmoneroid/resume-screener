@@ -1,6 +1,8 @@
 import json
 import fitz
 from PIL import Image
+import re 
+from nltk.tokenize import RegexpTokenizer
 
 
 class Ats_Functions:
@@ -57,11 +59,6 @@ class Ats_Functions:
             # Resume accepted
             return True, count
 
-import json 
-import re 
-from nltk.tokenize import RegexpTokenizer
-
-class Ats_Functions:
     def __init__(self,path):
         self.path=path
         
@@ -72,7 +69,7 @@ class Ats_Functions:
     def load_data(self):
         try: 
             #loads data into the  json.data from the Json file 
-            with open(self.path, 'r' ) as json_file:
+            with open(self.pdf_file_path, 'r' ) as json_file:
                 self.data=json.load(json_file)
         
         #If there appears to be File missing error, prints the statement
