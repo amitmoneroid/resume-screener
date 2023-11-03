@@ -56,3 +56,22 @@ class Ats_Functions:
         else:
             # Resume accepted
             return True, count
+
+    def resume_length(self):
+        """
+        Required args from class: Path to extracted text in json
+        Returns: Boolean value (weather resume passes check)
+        """
+        threshold_limit = 670  
+        #This needs to be updated with the data
+        with open(self.extracted_resume, "r") as json_file:
+            data = json.load(json_file)
+            extracted_data = [value for section in data.values() if isinstance(section, list) for dictionary in section for value in dictionary.values()]
+            char = ''.join(map(str, extracted_data))
+            #droppin all the special characters and whitespces
+            for x in " !\"#$%&'()*+,-./:;<=>?@[\]^_`{|}~":
+                char = char.replace(x,"")
+        if len(char)>threshold_limit:
+            return False
+        else:
+            return True
