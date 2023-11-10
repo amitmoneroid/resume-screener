@@ -1,6 +1,8 @@
 import json
 import fitz
 from PIL import Image
+import re 
+from nltk.tokenize import RegexpTokenizer
 
 
 class Ats_Functions:
@@ -10,6 +12,9 @@ class Ats_Functions:
         
         # For pronoun function
         self.extracted_resume = extracted_resume
+
+        # Assigns data from the path by loading load_data
+        self.load_data()
 
 
     def check_images(self):
@@ -75,3 +80,67 @@ class Ats_Functions:
             return False
         else:
             return True
+
+    def load_data(self):
+        try: 
+            #loads data into the  json.data from the Json file 
+            with open(self.extracted_resume, 'r' ) as json_file:
+                self.data=json.load(json_file)
+        
+        #If there appears to be File missing error, prints the statement
+        except FileNotFoundError:
+            print(f"File not found: {self.path}")
+            self.data= None 
+
+    def Count_bullet(text):
+    # tokenizer matches all the '•' or '-'
+        tokenizer = RegexpTokenizer( r'[*•\-]\s+')
+    #lst stores * and • and -
+        lst=tokenizer.tokenize(text)
+        return len(lst)
+
+    #Checks for: If the user has used appropriate no. of bullet points
+    def Check_bullet_point(self):
+        ct=self.Count_bullet()
+
+        # Checks if it is within the Resume limit suggestion
+        if   ct > 3 and ct < 8:
+            return True
+        else :                                    
+            return False
+
+    # Checks for no. of paragraph
+    def Count_Paragraph(self):
+        no_of_paragraph=0
+        remove_bullet=self.data.split('•')
+        
+        # Removes bullet and stores the data in data_without_bullet
+        data_without_bullet = ''.join(remove_bullet)
+        
+        remove_hyphen_bullet=data_without_bullet.split('-')
+        
+        # Removes hyohen and stores the data in data_without_bullet_hyphen
+        data_without_bullet_hyphen=''.join(remove_hyphen_bullet)
+        
+        pattern = r' {2,}|\n'
+        
+        # This splits the rest of the data with : If it is a new line or multiple spaces then split
+        # It lets u store multiple paragraph and lets u check more than one paragraph from a single string
+        isolated_paragraaph=re.split(pattern, data_without_bullet_hyphen)
+
+        for pararaph in isolated_paragraaph:
+            # regular expression
+            # This pattern splits the string into substring without removing the punctuation marks[unlike sentence tokenization]
+            paragraph_pattern = r'[^.!?]*[.!?]'
+            sentences = re.findall(paragraph_pattern, pararaph)
+            # Check if there are multiple sentences
+            if len(sentences) > 1:
+                no_of_paragraph=no_of_paragraph+1
+        return no_of_paragraph
+
+    # Checks for paragraph
+    def IsParagraph(self):
+        if self.Count_Paragraph > 0 :
+            return True
+        else:
+            return False
