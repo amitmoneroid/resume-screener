@@ -244,3 +244,7 @@ class AtsFunctions:
         ...
         # For now, just returning a dictionary of percentage of each color
         return resume_colors
+    
+    def ats_score(self):
+        # Weighted aggregate of scores of each aspect of ATS functions
+        ...
