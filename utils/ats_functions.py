@@ -4,6 +4,7 @@ import fitz
 from PIL import Image
 import re 
 import numpy as np
+from nltk.tokenize import RegexpTokenizer
 from fuzzy_scoring_system import FuzzyScoringSystem
 
 
