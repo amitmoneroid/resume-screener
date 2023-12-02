@@ -25,9 +25,9 @@ class AtsFunctions:
 
         # Loading raw extracted resume
         self.raw_extracted_resume = raw_extracted_resume
-        # if self.raw_extracted_resume == None:
+        if self.raw_extracted_resume == None:
             # Logic for extracting text from each section of 
-            # ...
+            ...
 
     def check_images(self):
         """
@@ -38,7 +38,6 @@ class AtsFunctions:
                         output goes asymptotically close to 0 as 
                         no. of images keep increasing)
         """
-        
         pdf = fitz.open(self.pdf_file_path)
         page = pdf[0]
         imgs = page.get_images()
@@ -56,10 +55,10 @@ class AtsFunctions:
         """
 
         pers_pron = ['I', 'We', 'Me', 'My', 'Mine', 'Myself', 'You', 'Your'
-                     , 'Yours', 'Yourself', 'She', 'Her', 'Hers', 'Herself'
-                     , 'He', 'Him', 'Himself', 'His', 'They', 'Them', 'Themself'
-                     , 'Themselves', 'Their', 'Us', 'Our', 'Ourselves', 'Ourself'
-                     , 'Ours', 'It', 'Itself']
+                     ,'Yours', 'Yourself', 'She', 'Her', 'Hers', 'Herself'
+                     ,'He', 'Him', 'Himself', 'His', 'They', 'Them', 'Themself'
+                     ,'Themselves', 'Their', 'Us', 'Our', 'Ourselves', 'Ourself'
+                     ,'Ours', 'It', 'Itself']
 
         # Translator for removing all punctuation
         translator = str.maketrans("", "", string.punctuation)
@@ -77,7 +76,6 @@ class AtsFunctions:
                                      ,main_threshold_upper=0
                                      ,soft_threshold_lower=0
                                      ,soft_threshold_upper=3)
-        
         return scoring.score()
 
     def resume_length(self):
@@ -99,14 +97,13 @@ class AtsFunctions:
                                      ,main_threshold_upper=675
                                      ,soft_threshold_lower=500
                                      ,soft_threshold_upper=725)
-
         return scoring.score()
 
-    def Count_bullet(text):
+    def helper_Count_bullet(self,text):
         """
-        Description: Counts no. of bullet points in text['*','-','•'].
+        Description: Helper function for 'Check_bullet_point'.
+                     Counts no. of bullet points in text['*','-','•'].
         """
-
         # Tokenizer matches all the '•' or '-'
         tokenizer = RegexpTokenizer( r'[*•\-]\s+')
         
@@ -118,24 +115,23 @@ class AtsFunctions:
         """
         Description: Checks appropriate no. of bullet points
         """
-        ct = self.Count_bullet()
+        ct = self.helper_Count_bullet(self.raw_extracted_resume)
 
         # Fuzzy scoring system
         scoring = FuzzyScoringSystem(ct
-                                     ,main_threshold_upper=4
-                                     ,main_threshold_lower=8
-                                     ,soft_threshold_upper=0
-                                     ,soft_threshold_lower=12)
-
+                                     ,main_threshold_lower=5
+                                     ,main_threshold_upper=15
+                                     ,soft_threshold_lower=0
+                                     ,soft_threshold_upper=20)
         return scoring.score()
 
     def Count_Paragraph(self):
         """
         Description: Checks no. of paragraphs used in resume.
         Required args from class: Resume JSON or raw resume text
-        Returns: Paragraph score (1 for no paragraphs, 0 for any number of paragraphs)
+        Returns: Paragraph score (1 for no paragraphs, 0 for any number of 
+                 paragraphs)
         """
-
         no_of_paragraph = 0
 
         # Removes bullet and stores the data in data_without_bullet
@@ -146,32 +142,35 @@ class AtsFunctions:
         remove_hyphen_bullet=data_without_bullet.split('-')
         data_without_bullet_hyphen=''.join(remove_hyphen_bullet)
 
-        pattern = r' {2,}|\n'
-
-        # This splits the rest of the data with : If it is a new line or multiple spaces then split
-        # It lets u store multiple paragraph and lets u check more than one paragraph from a single string
-        isolated_paragraaph=re.split(pattern, data_without_bullet_hyphen)
+        # This splits the rest of the data with : If it is a new line or 
+        # multiple spaces then split
+        # It lets u store multiple paragraph and lets u check more than one 
+        # paragraph from a single string
+        isolated_paragraaph=re.split(r' {2,}|\n', data_without_bullet_hyphen)
 
         for pararaph in isolated_paragraaph:
-            # regular expression
-            # This pattern splits the string into substring without removing the punctuation marks[unlike sentence tokenization]
-            paragraph_pattern = r'[^.!?]*[.!?]'
-            sentences = re.findall(paragraph_pattern, pararaph)
+            # This pattern splits the string into substring without removing 
+            # the punctuation marks[unlike sentence tokenization]
+            sentences = re.findall(r'[^.!?]*[.!?]', pararaph)
             # Check if there are multiple sentences
             if len(sentences) > 1:
                 no_of_paragraph=no_of_paragraph+1
         
-        return 1 if no_of_paragraph == 0 else 0
+        return 1.0 if no_of_paragraph == 0 else 0.0
     
-    def is_color_acceptable(self, pixel, target_color, threshold):
-        # Checks if pixel is in acceptable proximity of target color
+    def helper_is_color_acceptable(self, pixel, target_color, threshold):
+        """
+        Description: Helper function for 'color_check'. 
+                     Checks if pixel is in acceptable proximity of target color
+        """
         lower_bound = target_color - threshold
         upper_bound = target_color + threshold
         return np.all((pixel >= lower_bound) & (pixel <= upper_bound))
 
-    def check_acceptable_color(self, image, target_color, threshold):
+    def helper_check_acceptable_color(self, image, target_color, threshold):
         """
-        Description: Calculates the percentage of specified target color in the image
+        Description: Helper function for 'color_check'. Calculates the 
+                     percentage of specified target color in the image.
         Returns: Percentage (between 0 and 1) of target color in image
         """
         # Flattening the grid of pixels
@@ -184,7 +183,7 @@ class AtsFunctions:
             threshold = 50
 
         # Boolean array for each pixel matching the target color
-        acceptable_pixels = np.array([self.is_color_acceptable(pixel, target_color, threshold) for pixel in pixels])
+        acceptable_pixels = np.array([self.helper_is_color_acceptable(pixel, target_color, threshold) for pixel in pixels])
 
         total_pixels = pixels.shape[0]
 
@@ -194,9 +193,11 @@ class AtsFunctions:
 
     def color_check(self):
         """
-        Description: Checks colors used in resume and returns score accordingly. Scores colorful resumes less
+        Description: Checks colors used in resume and returns score accordingly. 
+                     Scores colorful resumes less.
         Required args: resume pdf path
-        Returns: Dictionary of % of each color in the resume. (Goal is to return a score between 0 and 1)
+        Returns: Dictionary of % of each color in the resume. 
+                 (Goal is to return a score between 0 and 1)
         """
         try:
             # Loading pdf in images
@@ -237,14 +238,37 @@ class AtsFunctions:
         # Calculating percentage of each color in resume
         for color_name, target_color in standard_colors.items():
             threshold = 150 if color_name in ["Red", "Green", "Blue"] else 50
-            color_percentage = self.check_acceptable_color(pdf_images[0], np.array(target_color), threshold)
+            color_percentage = self.helper_check_acceptable_color(pdf_images[0], np.array(target_color), threshold)
             resume_colors[color_name] = color_percentage
         
         # Need to make an appropriate method of scoring for colors
         ...
-        # For now, just returning a dictionary of percentage of each color
-        return resume_colors
+        # For now, just returning score 1
+        return 1.0
     
     def ats_score(self):
-        # Weighted aggregate of scores of each aspect of ATS functions
-        ...
+        """
+        Description: Weighted aggregate of scores of each main function of ATS 
+                     functions
+        Returns: Final ATS score for resume, dictionary of score in each field.
+        """
+        # The function with more weight is more important while one with least 
+        # weight is least important
+        weights = {
+            'Paragraph':6,
+            'Images':5,
+            'Resume_color':4,
+            'Pronoun':3,
+            'Resume_length':2,
+            'Bullet_point':1,
+        }
+        weights_list = list(weights.values())
+        # Scores from each main function
+        scores = [self.Count_Paragraph(),self.check_images(),self.color_check()
+                  ,self.pronoun(),self.resume_length(),self.Check_bullet_point()]
+        
+        # Weight_i x score_i
+        weighted_scores = [weight * score for weight, score in zip(weights_list, scores)]
+        
+        final_score = sum(weighted_scores)/sum(weights_list)
+        return final_score, {key: score for key,score in zip(weights.keys(),scores)}
