@@ -3,7 +3,7 @@ import string
 import fitz
 from PIL import Image
 import re 
-from nltk.tokenize import RegexpTokenizer
+import numpy as np
 from fuzzy_scoring_system import FuzzyScoringSystem
 
 
@@ -85,7 +85,6 @@ class AtsFunctions:
         Required args from class: Path to extracted text in json
         Returns: Boolean value (weather resume passes check)
         """
-
         extracted_data = [value for section in self.resume_json.values() if isinstance(section, list) for dictionary in section for value in dictionary.values()]
         char = ''.join(map(str, extracted_data))
         #droppin all the special characters and whitespces
@@ -162,3 +161,85 @@ class AtsFunctions:
                 no_of_paragraph=no_of_paragraph+1
         
         return 1 if no_of_paragraph == 0 else 0
+    
+    def is_color_acceptable(self, pixel, target_color, threshold):
+        # Checks if pixel is in acceptable proximity of target color
+        lower_bound = target_color - threshold
+        upper_bound = target_color + threshold
+        return np.all((pixel >= lower_bound) & (pixel <= upper_bound))
+
+    def check_acceptable_color(self, image, target_color, threshold):
+        """
+        Description: Calculates the percentage of specified target color in the image
+        Returns: Percentage (between 0 and 1) of target color in image
+        """
+        # Flattening the grid of pixels
+        pixels = image.reshape((-1, 3))
+
+        # If color is either red, green or blue, the current color is allowed to vary more.
+        if np.array_equal(target_color, (255, 0, 0)) or np.array_equal(target_color, (0, 255, 0)) or np.array_equal(target_color, (0, 0, 255)):
+            threshold = 150
+        else:
+            threshold = 50
+
+        # Boolean array for each pixel matching the target color
+        acceptable_pixels = np.array([self.is_color_acceptable(pixel, target_color, threshold) for pixel in pixels])
+
+        total_pixels = pixels.shape[0]
+
+        # Percentage of pixels similar to target color
+        acceptable_percentage = np.sum(acceptable_pixels) / total_pixels
+        return acceptable_percentage
+
+    def color_check(self):
+        """
+        Description: Checks colors used in resume and returns score accordingly. Scores colorful resumes less
+        Required args: resume pdf path
+        Returns: Dictionary of % of each color in the resume. (Goal is to return a score between 0 and 1)
+        """
+        try:
+            # Loading pdf in images
+            pdf_document = fitz.open(self.pdf_file_path)
+            pdf_images = []
+            for page_number in range(pdf_document.page_count):
+                page = pdf_document[page_number]
+                images_list = page.get_pixmap()
+                width, height = images_list.width, images_list.height
+                image_bytes = images_list.samples
+                image_np = np.frombuffer(image_bytes, dtype=np.uint8)
+
+                # Turing the images into an grid(array) of pixels each with RGB values
+                image_np = image_np.reshape((height, width, -1))
+                pdf_images.append(image_np)
+        except Exception as e:
+            print(f"Error in pdf_to_images: {e}")
+            return
+
+        standard_colors = {
+            "Black": (0, 0, 0),
+            "White": (255, 255, 255),
+            "Red": (255, 0, 0),
+            "Green": (0, 255, 0),
+            "Blue": (0, 0, 255),
+            "Yellow": (255, 255, 0),
+            "Magenta": (255, 0, 255),
+            "Cyan": (0, 255, 255),
+            "Gray": (128, 128, 128),
+            "Purple": (128, 0, 128),
+            "Orange": (255, 165, 0),
+            "Brown": (165, 42, 42),
+        }
+
+        # Dict of percentage of colors
+        resume_colors = {key: .0 for key in standard_colors.keys()}
+
+        # Calculating percentage of each color in resume
+        for color_name, target_color in standard_colors.items():
+            threshold = 150 if color_name in ["Red", "Green", "Blue"] else 50
+            color_percentage = self.check_acceptable_color(pdf_images[0], np.array(target_color), threshold)
+            resume_colors[color_name] = color_percentage
+        
+        # Need to make an appropriate method of scoring for colors
+        ...
+        # For now, just returning a dictionary of percentage of each color
+        return resume_colors
