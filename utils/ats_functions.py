@@ -1,160 +1,176 @@
 import json
+import string
 import fitz
 from PIL import Image
 import re 
-from nltk.tokenize import RegexpTokenizer
 import numpy as np
+from nltk.tokenize import RegexpTokenizer
+from fuzzy_scoring_system import FuzzyScoringSystem
 
 
-class Ats_Functions:
-    def __init__(self, pdf_file_path, extracted_resume):
+class AtsFunctions:
+    def __init__(self, pdf_file_path, resume_json_path, raw_extracted_resume=None):
         # For check_images function
         self.pdf_file_path = pdf_file_path
         
-        # For pronoun function
-        self.extracted_resume = extracted_resume
+        self.resume_json_path = resume_json_path
 
-        # Assigns data from the path by loading load_data
-        self.load_data()
+        # Loading resume json
+        try: 
+            #loads data into the  json.data from the Json file 
+            with open(self.resume_json_path, 'r' ) as json_file:
+                self.resume_json=json.load(json_file)
+        except FileNotFoundError:
+            print(f"File not found: {self.path}")
 
+        # Loading raw extracted resume
+        self.raw_extracted_resume = raw_extracted_resume
+        if self.raw_extracted_resume == None:
+            # Logic for extracting text from each section of 
+            ...
 
     def check_images(self):
         """
+        Description: Checks for images in resume.
         Required args from class: Path of pdf file
-        Returns: boolean value, int value(count of images)
+        Returns: float (Score for image in resume. 
+                        1 for 0 image, 0.5 for 1 image, 
+                        output goes asymptotically close to 0 as 
+                        no. of images keep increasing)
         """
-        
         pdf = fitz.open(self.pdf_file_path)
         page = pdf[0]
-        images = page.get_images()
+        imgs = page.get_images()
+        img_count = len(imgs)
 
-        if images:
-            return True, images 
-        else:
-            return False, 0
+        return 2**(-img_count)
 
     def pronoun(self):
         """
-        Required args from class: Path to extracted text in json (it has to be
-                                    pre-processed, meaning no punctuations)
-        Returns: Boolean value, int value(count of pronouns)
+        Description: Checks for pronoun usage in resume.
+        Required args from class: resume json or all text in resume in a single string
+        Returns: Float (1 for pronoun count between main threshold,
+                        decreasing values [0,1] till soft threshold,
+                        0 outside soft threshold)
         """
 
-        # Reading the extracted words from the resume
-        with open(self.extracted_resume, 'r') as json_file:
-            data = json.load(json_file)
+        pers_pron = ['I', 'We', 'Me', 'My', 'Mine', 'Myself', 'You', 'Your'
+                     ,'Yours', 'Yourself', 'She', 'Her', 'Hers', 'Herself'
+                     ,'He', 'Him', 'Himself', 'His', 'They', 'Them', 'Themself'
+                     ,'Themselves', 'Their', 'Us', 'Our', 'Ourselves', 'Ourself'
+                     ,'Ours', 'It', 'Itself']
 
-        pers_pron = ['I', 'We', 'Me', 'My', 'Mine', 'Myself', 'You', 'Your', 'Yours', 'Yourself', 'She', 'Her', 'Hers', 'Herself', 'He', 'Him', 'Himself', 'His', 'They', 'Them', 'Themself', 'Themselves', 'Their', 'Us', 'Our', 'Ourselves', 'Ourself', 'Ours', 'It', 'Itself']
-        
-        # Extract the text from your JSON data (adjust the key as needed)
-        text = data.get('text_field', '')
+        # Translator for removing all punctuation
+        translator = str.maketrans("", "", string.punctuation)
+
+        # Use translate to remove punctuation 
+        text = self.raw_extracted_resume.translate(translator)
         lowercase = text.lower().split(" ")
 
-        count = 0
-
+        pronoun_count = 0
         for pronoun in pers_pron:
-            count += lowercase.count(pronoun.lower())
-
-        threshold = 5
-        if count >= threshold:
-            # Resume rejected
-            return False, count
-        else:
-            # Resume accepted
-            return True, count
+            pronoun_count += lowercase.count(pronoun.lower())
+        # Fuzzy scoring system
+        scoring = FuzzyScoringSystem(pronoun_count
+                                     ,main_threshold_lower=0
+                                     ,main_threshold_upper=0
+                                     ,soft_threshold_lower=0
+                                     ,soft_threshold_upper=3)
+        return scoring.score()
 
     def resume_length(self):
         """
+        Description: Checks for number of characters being used in the resume.
         Required args from class: Path to extracted text in json
         Returns: Boolean value (weather resume passes check)
         """
-        threshold_limit = 670  
-        #This needs to be updated with the data
-        with open(self.extracted_resume, "r") as json_file:
-            data = json.load(json_file)
-            extracted_data = [value for section in data.values() if isinstance(section, list) for dictionary in section for value in dictionary.values()]
-            char = ''.join(map(str, extracted_data))
-            #droppin all the special characters and whitespces
-            for x in " !\"#$%&'()*+,-./:;<=>?@[\]^_`{|}~":
-                char = char.replace(x,"")
-        if len(char)>threshold_limit:
-            return False
-        else:
-            return True
+        extracted_data = [value for section in self.resume_json.values() if isinstance(section, list) for dictionary in section for value in dictionary.values()]
+        char = ''.join(map(str, extracted_data))
+        #droppin all the special characters and whitespces
+        for x in " !\"#$%&'()*+,-./:;<=>?@[\]^_`{|}~":
+            char = char.replace(x,"")
+        num_words = len(char)
 
-    def load_data(self):
-        try: 
-            #loads data into the  json.data from the Json file 
-            with open(self.extracted_resume, 'r' ) as json_file:
-                self.data=json.load(json_file)
-        
-        #If there appears to be File missing error, prints the statement
-        except FileNotFoundError:
-            print(f"File not found: {self.path}")
-            self.data= None 
+        # Fuzzy scoring system
+        scoring = FuzzyScoringSystem(num_words
+                                     ,main_threshold_lower=650
+                                     ,main_threshold_upper=675
+                                     ,soft_threshold_lower=500
+                                     ,soft_threshold_upper=725)
+        return scoring.score()
 
-    def Count_bullet(text):
-    # tokenizer matches all the '•' or '-'
+    def helper_Count_bullet(self,text):
+        """
+        Description: Helper function for 'Check_bullet_point'.
+                     Counts no. of bullet points in text['*','-','•'].
+        """
+        # Tokenizer matches all the '•' or '-'
         tokenizer = RegexpTokenizer( r'[*•\-]\s+')
-    #lst stores * and • and -
+        
+        # List stores * and • and -
         lst=tokenizer.tokenize(text)
         return len(lst)
 
-    #Checks for: If the user has used appropriate no. of bullet points
     def Check_bullet_point(self):
-        ct=self.Count_bullet()
+        """
+        Description: Checks appropriate no. of bullet points
+        """
+        ct = self.helper_Count_bullet(self.raw_extracted_resume)
 
-        # Checks if it is within the Resume limit suggestion
-        if   ct > 3 and ct < 8:
-            return True
-        else :                                    
-            return False
+        # Fuzzy scoring system
+        scoring = FuzzyScoringSystem(ct
+                                     ,main_threshold_lower=5
+                                     ,main_threshold_upper=15
+                                     ,soft_threshold_lower=0
+                                     ,soft_threshold_upper=20)
+        return scoring.score()
 
-    # Checks for no. of paragraph
     def Count_Paragraph(self):
-        no_of_paragraph=0
-        remove_bullet=self.data.split('•')
-        
+        """
+        Description: Checks no. of paragraphs used in resume.
+        Required args from class: Resume JSON or raw resume text
+        Returns: Paragraph score (1 for no paragraphs, 0 for any number of 
+                 paragraphs)
+        """
+        no_of_paragraph = 0
+
         # Removes bullet and stores the data in data_without_bullet
+        remove_bullet = self.raw_extracted_resume.split('•')
         data_without_bullet = ''.join(remove_bullet)
-        
-        remove_hyphen_bullet=data_without_bullet.split('-')
-        
+
         # Removes hyohen and stores the data in data_without_bullet_hyphen
+        remove_hyphen_bullet=data_without_bullet.split('-')
         data_without_bullet_hyphen=''.join(remove_hyphen_bullet)
-        
-        pattern = r' {2,}|\n'
-        
-        # This splits the rest of the data with : If it is a new line or multiple spaces then split
-        # It lets u store multiple paragraph and lets u check more than one paragraph from a single string
-        isolated_paragraaph=re.split(pattern, data_without_bullet_hyphen)
+
+        # This splits the rest of the data with : If it is a new line or 
+        # multiple spaces then split
+        # It lets u store multiple paragraph and lets u check more than one 
+        # paragraph from a single string
+        isolated_paragraaph=re.split(r' {2,}|\n', data_without_bullet_hyphen)
 
         for pararaph in isolated_paragraaph:
-            # regular expression
-            # This pattern splits the string into substring without removing the punctuation marks[unlike sentence tokenization]
-            paragraph_pattern = r'[^.!?]*[.!?]'
-            sentences = re.findall(paragraph_pattern, pararaph)
+            # This pattern splits the string into substring without removing 
+            # the punctuation marks[unlike sentence tokenization]
+            sentences = re.findall(r'[^.!?]*[.!?]', pararaph)
             # Check if there are multiple sentences
             if len(sentences) > 1:
                 no_of_paragraph=no_of_paragraph+1
-        return no_of_paragraph
-
-    # Checks for paragraph
-    def IsParagraph(self):
-        if self.Count_Paragraph > 0 :
-            return True
-        else:
-            return False
+        
+        return 1.0 if no_of_paragraph == 0 else 0.0
     
-    def is_color_acceptable(self, pixel, target_color, threshold):
-        # Checks if pixel is in acceptable proximity of target color
+    def helper_is_color_acceptable(self, pixel, target_color, threshold):
+        """
+        Description: Helper function for 'color_check'. 
+                     Checks if pixel is in acceptable proximity of target color
+        """
         lower_bound = target_color - threshold
         upper_bound = target_color + threshold
         return np.all((pixel >= lower_bound) & (pixel <= upper_bound))
 
-    def check_acceptable_color(self, image, target_color, threshold):
+    def helper_check_acceptable_color(self, image, target_color, threshold):
         """
-        Description: Calculates the percentage of specified target color in the image
+        Description: Helper function for 'color_check'. Calculates the 
+                     percentage of specified target color in the image.
         Returns: Percentage (between 0 and 1) of target color in image
         """
         # Flattening the grid of pixels
@@ -167,7 +183,7 @@ class Ats_Functions:
             threshold = 50
 
         # Boolean array for each pixel matching the target color
-        acceptable_pixels = np.array([self.is_color_acceptable(pixel, target_color, threshold) for pixel in pixels])
+        acceptable_pixels = np.array([self.helper_is_color_acceptable(pixel, target_color, threshold) for pixel in pixels])
 
         total_pixels = pixels.shape[0]
 
@@ -177,9 +193,11 @@ class Ats_Functions:
 
     def color_check(self):
         """
-        Description: Checks colors used in resume and returns score accordingly. Scores colorful resumes less
+        Description: Checks colors used in resume and returns score accordingly. 
+                     Scores colorful resumes less.
         Required args: resume pdf path
-        Returns: Dictionary of % of each color in the resume. (Goal is to return a score between 0 and 1)
+        Returns: Dictionary of % of each color in the resume. 
+                 (Goal is to return a score between 0 and 1)
         """
         try:
             # Loading pdf in images
@@ -220,10 +238,37 @@ class Ats_Functions:
         # Calculating percentage of each color in resume
         for color_name, target_color in standard_colors.items():
             threshold = 150 if color_name in ["Red", "Green", "Blue"] else 50
-            color_percentage = self.check_acceptable_color(pdf_images[0], np.array(target_color), threshold)
+            color_percentage = self.helper_check_acceptable_color(pdf_images[0], np.array(target_color), threshold)
             resume_colors[color_name] = color_percentage
         
         # Need to make an appropriate method of scoring for colors
         ...
-        # For now, just returning a dictionary of percentage of each color
-        return resume_colors
+        # For now, just returning score 1
+        return 1.0
+    
+    def ats_score(self):
+        """
+        Description: Weighted aggregate of scores of each main function of ATS 
+                     functions
+        Returns: Final ATS score for resume, dictionary of score in each field.
+        """
+        # The function with more weight is more important while one with least 
+        # weight is least important
+        weights = {
+            'Paragraph':6,
+            'Images':5,
+            'Resume_color':4,
+            'Pronoun':3,
+            'Resume_length':2,
+            'Bullet_point':1,
+        }
+        weights_list = list(weights.values())
+        # Scores from each main function
+        scores = [self.Count_Paragraph(),self.check_images(),self.color_check()
+                  ,self.pronoun(),self.resume_length(),self.Check_bullet_point()]
+        
+        # Weight_i x score_i
+        weighted_scores = [weight * score for weight, score in zip(weights_list, scores)]
+        
+        final_score = sum(weighted_scores)/sum(weights_list)
+        return final_score, {key: score for key,score in zip(weights.keys(),scores)}
