@@ -5,6 +5,9 @@ from PIL import Image
 import re 
 import numpy as np
 from nltk.tokenize import RegexpTokenizer
+
+import sys
+sys.path.insert(0,"utils")
 from fuzzy_scoring_system import FuzzyScoringSystem
 
 
@@ -272,3 +275,11 @@ class AtsFunctions:
         
         final_score = sum(weighted_scores)/sum(weights_list)
         return final_score, {key: score for key,score in zip(weights.keys(),scores)}
+
+if __name__=="__main__":
+    raw_extracted_resume = """PRATHIK SHETTY\nMUMBAI, MAHARASHTRA\n+91 9326344685 | prathikkshetty15@gmail.com | Linkedin | GitHub | HackerRank/leetcodeEDUCATION\nThakur college of engineering & technology 08 2020 - 08 2024 B. Tech in AI&ML – 9.71 Mumbai, Maharashtra COURSEWORK / SKILLS\n• Data Structures • Data Science • Cloud • Database Management System (DBMS)\n• Artificial Intelligence • Backend Development • Web Development • Machine LearningPROJECTS\nResearch Nerd | React.js, flask, firebase, spacy 03 2022 - 03 2022• A research paper recommendation web app\nS.H.I.E.L.D | Next.js, flask, firebase, chart.js, Chakra UI 07 2022 - 07 2022• The project provides safety alerts to registered users\n• crowdsourcing for people in relief areas\nSocial Crypt | Next.js, Huggingface, flask, python 02 2023 – 02 2023• Social media real-time analytics and hate speech detection\nINTERNSHIP\nTechLearn 09 2022 – 03 2023 Content Creator\n• Learnt a lot about Machine Learning through real life case studies\n Mindsdb 01 2023 – currentCommunity Contributor\n • Build apps, use cases of AutoML using Mindsdb\nTECHNICAL SKILLS\nLanguages: Python, C, C++, JavaScript, BASH, SQL, NoSQL, R, Markdown,\nDeveloper Tools: VS Code, Atom, Google collab, Jupyter notebook, Postman, Notion, Figma\nTechnologies/Frameworks: Linux, GitHub, ReactJS, Git, Mindsdb, Huggingface, Streamlit, Flask, Firebase\nCO/EXTRA-CURRICULAR ACTIVITIES\nGoogle developer student clubs 08 2022 - currentTechnical Head Mumbai • Maintain open source of GDSC, curate technical content & handle technical team , website, etc.\nParticipation Certificate.\nCERTIFICATIONS\n• Machine Learning - Udemy • Nosql basics- ScyllaDb • Python development - FOSSEE• Deep learning - Udemy • Microsoft Azure fundamentals - Reskilll"""
+    
+    ats = AtsFunctions(pdf_file_path="uploads/example.pdf"
+                       ,resume_json_path="tests/test_empty_resume.json"
+                       ,raw_extracted_resume=raw_extracted_resume)
+    print(ats.ats_score())
